@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Pengaduan - Yonif TP 953</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f5f7;color:#18202a}
+header{background:#17351f;color:white;padding:20px}
+main{max-width:1100px;margin:20px auto;padding:0 14px}
+.card{background:white;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px #0001}
+table{width:100%;border-collapse:collapse;background:white}
+th,td{padding:10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top}
+select,textarea,button{padding:8px;border-radius:7px;border:1px solid #bbb}
+button{cursor:pointer}
+.small{font-size:12px;color:#68707a}
+@media(max-width:700px){table{font-size:12px}th,td{padding:7px}}
+</style>
+</head>
+<body>
+<header><h2>🇮🇩 Dashboard Pengaduan & Aspirasi</h2><div>YONIF TP 953/HARIMAU RAWA</div></header>
+<main>
+<div class="card"><b>Dashboard Admin</b><div class="small">Data diperbarui otomatis setiap 10 detik.</div></div>
+<div class="card"><div id="stats"></div></div>
+<div class="card" style="overflow:auto"><table><thead><tr><th>Tiket</th><th>Pelapor</th><th>Jenis</th><th>Uraian</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="rows"></tbody></table></div>
+</main>
+<script>
+async function load(){
+ const r=await fetch('/api/complaints'); const data=await r.json();
+ const count=s=>data.filter(x=>x.status===s).length;
+ document.getElementById('stats').innerHTML=`Total: <b>${data.length}</b> &nbsp;|&nbsp; Menunggu: <b>${count('Menunggu Verifikasi')}</b> &nbsp;|&nbsp; Diproses: <b>${count('Diproses')}</b> &nbsp;|&nbsp; Selesai: <b>${count('Selesai')}</b>`;
+ document.getElementById('rows').innerHTML=data.slice().reverse().map(x=>`<tr>
+ <td><b>${x.id}</b><br><span class="small">${x.createdAt}</span></td>
+ <td>${x.name}<br>${x.phone}<br>${x.location}</td>
+ <td>${x.type}</td><td>${x.description}</td>
+ <td><select id="s-${x.id}">${['Menunggu Verifikasi','Diproses','Selesai','Ditolak'].map(s=>`<option ${s===x.status?'selected':''}>${s}</option>`).join('')}</select></td>
+ <td><textarea id="n-${x.id}" placeholder="Catatan">${x.note||''}</textarea><br><button onclick="save('${x.id}')">Simpan</button></td>
+ </tr>`).join('');
+}
+async function save(id){
+ const status=document.getElementById('s-'+id).value, note=document.getElementById('n-'+id).value;
+ await fetch('/api/complaints/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,note})});
+ load();
+}
+load(); setInterval(load,10000);
+</script>
+</body>
+</html>
